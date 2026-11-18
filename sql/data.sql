@@ -7,14 +7,25 @@
 
 USE finance_portal;
 
--- 演示账号：
---   管理员 admin / admin123
---   客户   customer / 123456
+-- 演示账号（组内测试用）：
+--   管理员      admin   / admin123
+--   客户        customer / 123456
+--   测试客户     tester1 ~ tester5 / test123456
 INSERT INTO t_user (username, password, real_name, phone, email, role, balance, risk_level, status)
 VALUES ('admin', '$2a$10$hu1IFMY9Kx2hwUm6nJFgz.tDxyFlxPxF5pIg7.HV04akFb.PczycC',
         '系统管理员', '13800000000', 'admin@finance.local', 'ADMIN', 0.00, NULL, 1),
        ('customer', '$2a$10$6Ew/hcmKE7khiNYFYZBNhuqpAYwla.bbVNm94u/LCouLGSIukrzhu',
-        '张小明', '13900000000', 'customer@finance.local', 'CUSTOMER', 100000.00, NULL, 1)
+        '张小明', '13900000000', 'customer@finance.local', 'CUSTOMER', 100000.00, NULL, 1),
+       ('tester1', '$2a$10$7DnYzji4ErlGDfhdBSTiMuf2t6aglYxdxdJZhn9SOOOfntruoHfWO',
+        '测试员一', '13700000001', 'tester1@finance.local', 'CUSTOMER', 100000.00, NULL, 1),
+       ('tester2', '$2a$10$7DnYzji4ErlGDfhdBSTiMuf2t6aglYxdxdJZhn9SOOOfntruoHfWO',
+        '测试员二', '13700000002', 'tester2@finance.local', 'CUSTOMER', 100000.00, NULL, 1),
+       ('tester3', '$2a$10$7DnYzji4ErlGDfhdBSTiMuf2t6aglYxdxdJZhn9SOOOfntruoHfWO',
+        '测试员三', '13700000003', 'tester3@finance.local', 'CUSTOMER', 100000.00, NULL, 1),
+       ('tester4', '$2a$10$7DnYzji4ErlGDfhdBSTiMuf2t6aglYxdxdJZhn9SOOOfntruoHfWO',
+        '测试员四', '13700000004', 'tester4@finance.local', 'CUSTOMER', 100000.00, NULL, 1),
+       ('tester5', '$2a$10$7DnYzji4ErlGDfhdBSTiMuf2t6aglYxdxdJZhn9SOOOfntruoHfWO',
+        '测试员五', '13700000005', 'tester5@finance.local', 'CUSTOMER', 100000.00, NULL, 1)
 ON DUPLICATE KEY UPDATE password   = VALUES(password),
                         real_name  = VALUES(real_name),
                         role       = VALUES(role),
