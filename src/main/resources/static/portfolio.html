@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>我的持仓 · 汇金财富</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="page">
+    <div class="section-head">
+        <h2>我的账户</h2>
+        <span class="hint" id="risk-hint"></span>
+    </div>
+
+    <div class="stat-grid" id="overview">
+        <div class="empty">加载中…</div>
+    </div>
+
+    <div class="tabs" style="margin-top:28px">
+        <button type="button" class="active" data-tab="holdings">我的持仓</button>
+        <button type="button" data-tab="orders">交易记录</button>
+    </div>
+
+    <section class="tab-panel active" id="panel-holdings">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>产品</th>
+                    <th>类型</th>
+                    <th>风险</th>
+                    <th>持仓本金（元）</th>
+                    <th>预期收益（元）</th>
+                    <th>买入日期</th>
+                    <th>到期日期</th>
+                    <th>状态</th>
+                </tr>
+                </thead>
+                <tbody id="holdings-body">
+                <tr><td colspan="8">加载中…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="tab-panel" id="panel-orders">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>订单号</th>
+                    <th>产品</th>
+                    <th>投资金额（元）</th>
+                    <th>预期收益（元）</th>
+                    <th>下单时间</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tbody id="orders-body">
+                <tr><td colspan="7">加载中…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+    function renderOverview(overview) {
+        document.getElementById('risk-hint').innerHTML =
+            '风险等级：' + (overview.riskLevel
+                ? `<strong>${overview.riskLevel} ${UI.escape(overview.riskLabel)}</strong>`
+                : '<a href="risk.html">未测评，去测评 →</a>');
+
+        document.getElementById('overview').innerHTML = `
+            <div class="stat">
+                <div class="label">账户余额（元）</div>
+                <div class="value money">${UI.money(overview.balance)}</div>
+            </div>
+            <div class="stat">
+                <div class="label">持仓本金（元）</div>
+                <div class="value">${UI.money(overview.holdingAmount)}</div>
+            </div>
+            <div class="stat">
+                <div class="label">持仓预期收益（元）</div>
+                <div class="value money">${UI.money(overview.expectedIncome)}</div>
+            </div>
+            <div class="stat">
+                <div class="label">交易笔数</div>
+                <div class="value">${overview.orderCount}</div>
+            </div>`;
+    }
+
+    function renderHoldings(holdings) {
+        const body = document.getElementById('holdings-body');
+        if (!holdings.length) {
+            body.innerHTML = `<tr><td colspan="8">${UI.empty('还没有持仓，去产品中心看看')}</td></tr>`;
+            return;
+        }
+        body.innerHTML = holdings.map(item => `
+            <tr>
+                <td>${UI.escape(item.productName)}</td>
+                <td>${UI.escape(item.category)}</td>
+                <td>${UI.riskBadge(item.riskLevel)}</td>
+                <td class="num">${UI.money(item.amount)}</td>
+                <td class="num money">${UI.money(item.expectedIncome)}</td>
+                <td>${UI.date(item.purchaseDate)}</td>
+                <td>${item.maturityDate ? UI.date(item.maturityDate) : '活期'}</td>
+                <td>${item.status === 'HOLDING' ? '<span class="badge badge-green">持有中</span>' : '<span class="badge badge-gray">已赎回</span>'}</td>
+            </tr>`).join('');
+    }
+
+    function renderOrders(orders) {
+        const body = document.getElementById('orders-body');
+        if (!orders.length) {
+            body.innerHTML = `<tr><td colspan="7">${UI.empty('暂无交易记录')}</td></tr>`;
+            return;
+        }
+        body.innerHTML = orders.map(order => `
+            <tr>
+                <td>${UI.escape(order.orderNo)}</td>
+                <td>${UI.escape(order.productName || '-')}</td>
+                <td class="num">${UI.money(order.amount)}</td>
+                <td class="num money">${UI.money(order.expectedIncome)}</td>
+                <td>${UI.datetime(order.createdAt)}</td>
+                <td>${UI.orderStatusBadge(order.status)}</td>
+                <td>${order.status === 'PAID'
+            ? `<button class="btn btn-sm btn-danger" data-redeem="${order.id}" data-order="${UI.escape(order.orderNo)}">赎回</button>`
+            : '—'}</td>
+            </tr>`).join('');
+    }
+
+    async function loadAll() {
+        try {
+            const [overview, holdings, orders] = await Promise.all([
+                API.get('/api/account/overview'),
+                API.get('/api/account/holdings'),
+                API.get('/api/orders?page=1&size=50')
+            ]);
+            renderOverview(overview);
+            renderHoldings(holdings);
+            renderOrders(orders.list);
+        } catch (error) {
+            if (error.status === 401) {
+                location.href = 'login.html?redirect=portfolio.html';
+                return;
+            }
+            UI.handleError(error);
+        }
+    }
+
+    document.querySelectorAll('.tabs button').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.tabs button').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            button.classList.add('active');
+            document.getElementById('panel-' + button.dataset.tab).classList.add('active');
+        });
+    });
+
+    document.getElementById('orders-body').addEventListener('click', async event => {
+        const button = event.target.closest('button[data-redeem]');
+        if (!button) {
+            return;
+        }
+        if (!confirm('确认赎回订单 ' + button.dataset.order + ' 吗？赎回后本金与模拟收益将回到账户余额。')) {
+            return;
+        }
+        button.disabled = true;
+        try {
+            const result = await API.post('/api/orders/' + button.dataset.redeem + '/redeem');
+            UI.toast('赎回成功，到账 ' + UI.money(result.credited) + ' 元（含收益 ' + UI.money(result.income) + ' 元）', 'success');
+            await loadAll();
+        } catch (error) {
+            UI.handleError(error);
+            button.disabled = false;
+        }
+    });
+
+    (async function () {
+        const me = await initLayout('portfolio');
+        if (!me) {
+            location.href = 'login.html?redirect=portfolio.html';
+            return;
+        }
+        await loadAll();
+    })();
+</script>
+</body>
+</html>

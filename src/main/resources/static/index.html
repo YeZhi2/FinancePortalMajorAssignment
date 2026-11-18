@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>汇金财富 · 金融理财产品门户</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="page">
+    <section class="hero">
+        <h1>让每一份闲钱，都有合适的去处</h1>
+        <p>覆盖货币、债券、混合、指数与股票型理财产品，先测评风险承受能力，再挑选与自身等级匹配的产品，全流程线上完成。</p>
+        <div class="hero-actions">
+            <a class="btn btn-gold" href="products.html">浏览产品</a>
+            <a class="btn btn-ghost" href="risk.html">立即风险测评</a>
+        </div>
+        <div class="hero-stats">
+            <div><span id="stat-products">—</span><small>在售产品</small></div>
+            <div><span id="stat-news">—</span><small>市场资讯</small></div>
+            <div><span>C1-C5</span><small>风险等级全覆盖</small></div>
+        </div>
+    </section>
+
+    <div class="section-head">
+        <h2>热门产品</h2>
+        <a href="products.html">查看全部产品 →</a>
+    </div>
+    <div class="grid grid-3" id="hot-products">
+        <div class="empty">加载中…</div>
+    </div>
+
+    <div class="section-head">
+        <h2>市场资讯</h2>
+        <span class="hint">市场解读 · 投教 · 公告</span>
+    </div>
+    <div class="news-list" id="news-list">
+        <div class="empty">加载中…</div>
+    </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+    (async function () {
+        await initLayout('index');
+        try {
+            const [hot, news, firstPage] = await Promise.all([
+                API.get('/api/products/hot?limit=6'),
+                API.get('/api/articles?limit=4'),
+                API.get('/api/products?page=1&size=1')
+            ]);
+            document.getElementById('stat-products').textContent = firstPage.total;
+            document.getElementById('stat-news').textContent = news.length;
+
+            document.getElementById('hot-products').innerHTML =
+                hot.length ? hot.map(p => UI.productCard(p)).join('') : UI.empty('暂无在售产品');
+
+            document.getElementById('news-list').innerHTML = news.length
+                ? news.map(a => `
+                    <article class="news-item">
+                        <div>
+                            <h3>${UI.escape(a.title)}
+                                <span class="badge badge-blue">${UI.escape(a.category)}</span>
+                            </h3>
+                            <p>${UI.escape(a.summary || '')}</p>
+                        </div>
+                        <div class="news-date">${UI.date(a.publishDate)}</div>
+                    </article>`).join('')
+                : UI.empty('暂无资讯');
+        } catch (error) {
+            UI.handleError(error);
+        }
+    })();
+</script>
+</body>
+</html>

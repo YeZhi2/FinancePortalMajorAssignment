@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>产品中心 · 汇金财富</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="page">
+    <div class="section-head">
+        <h2>产品中心</h2>
+        <span class="hint" id="result-hint">共 0 款产品</span>
+    </div>
+
+    <form class="filter-bar" id="filter-form">
+        <div class="form-row">
+            <label for="keyword">关键字</label>
+            <input class="input" id="keyword" name="keyword" placeholder="产品名称或代码">
+        </div>
+        <div class="form-row">
+            <label for="category">产品类型</label>
+            <select class="input" id="category" name="category">
+                <option value="">全部</option>
+                <option value="货币型">货币型</option>
+                <option value="债券型">债券型</option>
+                <option value="混合型">混合型</option>
+                <option value="指数型">指数型</option>
+                <option value="股票型">股票型</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="riskLevel">风险等级</label>
+            <select class="input" id="riskLevel" name="riskLevel">
+                <option value="">全部</option>
+                <option value="R1">R1 低风险</option>
+                <option value="R2">R2 中低风险</option>
+                <option value="R3">R3 中风险</option>
+                <option value="R4">R4 中高风险</option>
+                <option value="R5">R5 高风险</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="sort">排序</label>
+            <select class="input" id="sort" name="sort">
+                <option value="">默认</option>
+                <option value="return_desc">收益率从高到低</option>
+                <option value="term_asc">期限从短到长</option>
+                <option value="min_asc">起投金额从低到高</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <button class="btn" type="submit">筛选</button>
+        </div>
+    </form>
+
+    <div class="grid grid-3" id="product-list" style="margin-top:20px">
+        <div class="empty">加载中…</div>
+    </div>
+
+    <div class="pagination" id="pagination"></div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+    const state = { page: 1, size: 9, keyword: '', category: '', riskLevel: '', sort: '' };
+
+    function buildQuery() {
+        const params = new URLSearchParams();
+        params.set('page', state.page);
+        params.set('size', state.size);
+        if (state.keyword) params.set('keyword', state.keyword);
+        if (state.category) params.set('category', state.category);
+        if (state.riskLevel) params.set('riskLevel', state.riskLevel);
+        if (state.sort) params.set('sort', state.sort);
+        return params.toString();
+    }
+
+    async function loadProducts() {
+        const listBox = document.getElementById('product-list');
+        listBox.innerHTML = '<div class="empty">加载中…</div>';
+        try {
+            const result = await API.get('/api/products?' + buildQuery());
+            document.getElementById('result-hint').textContent = '共 ' + result.total + ' 款产品';
+            listBox.innerHTML = result.list.length
+                ? result.list.map(p => UI.productCard(p)).join('')
+                : UI.empty('没有符合条件的产品，试试放宽筛选条件');
+            renderPagination(result);
+        } catch (error) {
+            UI.handleError(error);
+        }
+    }
+
+    function renderPagination(result) {
+        const box = document.getElementById('pagination');
+        if (result.pages <= 1) {
+            box.innerHTML = '';
+            return;
+        }
+        let html = `<button type="button" data-page="${result.page - 1}" ${result.page <= 1 ? 'disabled' : ''}>上一页</button>`;
+        for (let i = 1; i <= result.pages; i++) {
+            html += `<button type="button" data-page="${i}" class="${i === result.page ? 'active' : ''}">${i}</button>`;
+        }
+        html += `<button type="button" data-page="${result.page + 1}" ${result.page >= result.pages ? 'disabled' : ''}>下一页</button>`;
+        box.innerHTML = html;
+    }
+
+    document.getElementById('pagination').addEventListener('click', event => {
+        const target = event.target.closest('button[data-page]');
+        if (!target || target.disabled) {
+            return;
+        }
+        state.page = Number(target.dataset.page);
+        loadProducts();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    document.getElementById('filter-form').addEventListener('submit', event => {
+        event.preventDefault();
+        state.keyword = document.getElementById('keyword').value.trim();
+        state.category = document.getElementById('category').value;
+        state.riskLevel = document.getElementById('riskLevel').value;
+        state.sort = document.getElementById('sort').value;
+        state.page = 1;
+        loadProducts();
+    });
+
+    (async function () {
+        await initLayout('products');
+        loadProducts();
+    })();
+</script>
+</body>
+</html>

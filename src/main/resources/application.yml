@@ -1,0 +1,42 @@
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+    session:
+      timeout: 2h
+      cookie:
+        http-only: true
+        same-site: lax
+
+spring:
+  application:
+    name: finance-portal
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:finance_portal}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+  web:
+    resources:
+      cache:
+        period: 0
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.finance.portal.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    root: info
+    com.finance.portal.mapper: debug

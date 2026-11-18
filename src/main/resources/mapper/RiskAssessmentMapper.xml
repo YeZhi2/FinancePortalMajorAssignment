@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.finance.portal.mapper.RiskAssessmentMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id"
+            parameterType="com.finance.portal.entity.RiskAssessment">
+        INSERT INTO t_risk_assessment (user_id, score, risk_level, answers, created_at)
+        VALUES (#{userId}, #{score}, #{riskLevel}, #{answers}, NOW())
+    </insert>
+
+    <select id="findLatestByUser" resultType="com.finance.portal.entity.RiskAssessment">
+        SELECT id, user_id, score, risk_level, answers, created_at
+        FROM t_risk_assessment
+        WHERE user_id = #{userId}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+</mapper>

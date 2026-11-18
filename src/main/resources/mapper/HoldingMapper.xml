@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.finance.portal.mapper.HoldingMapper">
+
+    <sql id="holdingColumns">
+        h.id, h.user_id, h.product_id, h.shares, h.amount, h.expected_income, h.purchase_date,
+        h.maturity_date, h.status, h.created_at, h.updated_at
+    </sql>
+
+    <sql id="withProduct">
+        <include refid="holdingColumns"/>,
+        p.name AS product_name, p.category, p.risk_level, p.expected_return, p.term_days
+    </sql>
+
+    <select id="findByUserAndProduct" resultType="com.finance.portal.entity.Holding">
+        SELECT <include refid="withProduct"/>
+        FROM t_holding h
+        JOIN t_product p ON p.id = h.product_id
+        WHERE h.user_id = #{userId} AND h.product_id = #{productId}
+    </select>
+
+    <select id="findByUser" resultType="com.finance.portal.entity.Holding">
+        SELECT <include refid="withProduct"/>
+        FROM t_holding h
+        JOIN t_product p ON p.id = h.product_id
+        WHERE h.user_id = #{userId}
+        ORDER BY h.id DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" parameterType="com.finance.portal.entity.Holding">
+        INSERT INTO t_holding (user_id, product_id, shares, amount, expected_income, purchase_date,
+                               maturity_date, status, created_at, updated_at)
+        VALUES (#{userId}, #{productId}, #{shares}, #{amount}, #{expectedIncome}, #{purchaseDate},
+                #{maturityDate}, #{status}, NOW(), NOW())
+    </insert>
+
+    <update id="updateAmounts">
+        UPDATE t_holding
+        SET amount = #{amount}, shares = #{shares}, expected_income = #{expectedIncome}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM t_holding WHERE id = #{id}
+    </delete>
+
+    <select id="sumAmountByUser" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM t_holding
+        WHERE user_id = #{userId} AND status = 'HOLDING'
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM t_holding WHERE status = 'HOLDING'
+    </select>
+
+</mapper>

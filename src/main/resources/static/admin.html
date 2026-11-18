@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>管理后台 · 汇金财富</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="page">
+    <div class="section-head">
+        <h2>管理后台</h2>
+        <span class="hint">产品维护、订单查询与客户管理</span>
+    </div>
+
+    <div id="admin-root">
+        <div class="empty">加载中…</div>
+    </div>
+</main>
+
+<div class="modal-mask" id="product-modal">
+    <div class="modal">
+        <h3 id="modal-title">新建产品</h3>
+        <form id="product-form">
+            <input type="hidden" id="p-id">
+            <div class="form-grid">
+                <div class="form-row">
+                    <label for="p-name">产品名称 *</label>
+                    <input class="input" id="p-name" required>
+                </div>
+                <div class="form-row">
+                    <label for="p-code">产品代码（留空自动生成）</label>
+                    <input class="input" id="p-code">
+                </div>
+                <div class="form-row">
+                    <label for="p-category">产品类型 *</label>
+                    <select class="input" id="p-category">
+                        <option value="货币型">货币型</option>
+                        <option value="债券型">债券型</option>
+                        <option value="混合型">混合型</option>
+                        <option value="指数型">指数型</option>
+                        <option value="股票型">股票型</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="p-risk">风险等级 *</label>
+                    <select class="input" id="p-risk">
+                        <option value="R1">R1 低风险</option>
+                        <option value="R2">R2 中低风险</option>
+                        <option value="R3">R3 中风险</option>
+                        <option value="R4">R4 中高风险</option>
+                        <option value="R5">R5 高风险</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="p-return">预期年化收益率（%）*</label>
+                    <input class="input" id="p-return" type="number" step="0.01" min="0" max="100" required>
+                </div>
+                <div class="form-row">
+                    <label for="p-term">投资期限（天，0 为活期）*</label>
+                    <input class="input" id="p-term" type="number" min="0" step="1" required>
+                </div>
+                <div class="form-row">
+                    <label for="p-min">起投金额（元）*</label>
+                    <input class="input" id="p-min" type="number" step="0.01" min="0.01" required>
+                </div>
+                <div class="form-row">
+                    <label for="p-total">募集总额（元）*</label>
+                    <input class="input" id="p-total" type="number" step="0.01" min="1" required>
+                </div>
+                <div class="form-row">
+                    <label for="p-manager">产品管理人</label>
+                    <input class="input" id="p-manager">
+                </div>
+                <div class="form-row">
+                    <label for="p-status">状态</label>
+                    <select class="input" id="p-status">
+                        <option value="1">上架</option>
+                        <option value="0">下架</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <label for="p-desc">产品说明</label>
+                <textarea class="input" id="p-desc"></textarea>
+            </div>
+            <p class="error-text" id="product-error"></p>
+            <div class="form-actions">
+                <button class="btn btn-outline" type="button" id="modal-cancel">取消</button>
+                <button class="btn btn-gold" type="submit" id="product-save">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+    const state = {
+        product: { page: 1, size: 8, keyword: '' },
+        order: { page: 1, size: 10, status: '', keyword: '' },
+        user: { page: 1, size: 10 }
+    };
+
+    function pagination(result) {
+        if (result.pages <= 1) {
+            return '';
+        }
+        let html = `<button type="button" data-page="${result.page - 1}" ${result.page <= 1 ? 'disabled' : ''}>上一页</button>`;
+        for (let i = 1; i <= result.pages; i++) {
+            html += `<button type="button" data-page="${i}" class="${i === result.page ? 'active' : ''}">${i}</button>`;
+        }
+        html += `<button type="button" data-page="${result.page + 1}" ${result.page >= result.pages ? 'disabled' : ''}>下一页</button>`;
+        return `<div class="pagination">${html}</div>`;
+    }
+
+    function renderShell() {
+        document.getElementById('admin-root').innerHTML = `
+            <div class="tabs">
+                <button type="button" class="active" data-tab="stats">数据概览</button>
+                <button type="button" data-tab="products">产品管理</button>
+                <button type="button" data-tab="orders">订单管理</button>
+                <button type="button" data-tab="users">用户管理</button>
+            </div>
+
+            <section class="tab-panel active" id="panel-stats">
+                <div class="stat-grid" id="stat-grid"><div class="empty">加载中…</div></div>
+            </section>
+
+            <section class="tab-panel" id="panel-products">
+                <div class="filter-bar" style="grid-template-columns:2fr auto">
+                    <div class="form-row">
+                        <label for="p-keyword">搜索产品</label>
+                        <input class="input" id="p-keyword" placeholder="产品名称或代码">
+                    </div>
+                    <div class="form-row" style="display:flex;gap:10px">
+                        <button class="btn btn-outline" type="button" id="p-search">搜索</button>
+                        <button class="btn btn-gold" type="button" id="p-create">新建产品</button>
+                    </div>
+                </div>
+                <div class="table-wrap" style="margin-top:16px">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>代码</th><th>名称</th><th>类型</th><th>风险</th><th>年化</th>
+                            <th>期限</th><th>起投</th><th>已售/总额</th><th>状态</th><th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody id="product-body"><tr><td colspan="10">加载中…</td></tr></tbody>
+                    </table>
+                </div>
+                <div id="product-pagination"></div>
+            </section>
+
+            <section class="tab-panel" id="panel-orders">
+                <div class="filter-bar" style="grid-template-columns:2fr 1fr auto">
+                    <div class="form-row">
+                        <label for="o-keyword">搜索订单 / 客户 / 产品</label>
+                        <input class="input" id="o-keyword" placeholder="订单号、客户名或产品名">
+                    </div>
+                    <div class="form-row">
+                        <label for="o-status">状态</label>
+                        <select class="input" id="o-status">
+                            <option value="">全部</option>
+                            <option value="PAID">持有中</option>
+                            <option value="REDEEMED">已赎回</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <button class="btn btn-outline" type="button" id="o-search">搜索</button>
+                    </div>
+                </div>
+                <div class="table-wrap" style="margin-top:16px">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>订单号</th><th>客户</th><th>产品</th><th>金额（元）</th>
+                            <th>预期收益（元）</th><th>下单时间</th><th>状态</th>
+                        </tr>
+                        </thead>
+                        <tbody id="order-body"><tr><td colspan="7">加载中…</td></tr></tbody>
+                    </table>
+                </div>
+                <div id="order-pagination"></div>
+            </section>
+
+            <section class="tab-panel" id="panel-users">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>ID</th><th>用户名</th><th>姓名</th><th>手机号</th><th>角色</th>
+                            <th>余额（元）</th><th>风险等级</th><th>状态</th><th>操作</th>
+                        </tr>
+                        </thead>
+                        <tbody id="user-body"><tr><td colspan="9">加载中…</td></tr></tbody>
+                    </table>
+                </div>
+                <div id="user-pagination"></div>
+            </section>`;
+
+        document.querySelectorAll('.tabs button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.tabs button').forEach(item => item.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+                button.classList.add('active');
+                document.getElementById('panel-' + button.dataset.tab).classList.add('active');
+            });
+        });
+
+        document.getElementById('p-search').addEventListener('click', () => {
+            state.product.keyword = document.getElementById('p-keyword').value.trim();
+            state.product.page = 1;
+            loadProducts();
+        });
+        document.getElementById('o-search').addEventListener('click', () => {
+            state.order.keyword = document.getElementById('o-keyword').value.trim();
+            state.order.status = document.getElementById('o-status').value;
+            state.order.page = 1;
+            loadOrders();
+        });
+        document.getElementById('p-create').addEventListener('click', () => openProductModal(null));
+        document.getElementById('modal-cancel').addEventListener('click', closeProductModal);
+        document.getElementById('product-form').addEventListener('submit', submitProduct);
+    }
+
+    async function loadStats() {
+        try {
+            const stats = await API.get('/api/admin/stats');
+            document.getElementById('stat-grid').innerHTML = `
+                <div class="stat"><div class="label">产品总数</div><div class="value">${stats.productCount}</div></div>
+                <div class="stat"><div class="label">注册用户</div><div class="value">${stats.userCount}</div></div>
+                <div class="stat"><div class="label">订单总数</div><div class="value">${stats.orderCount}</div></div>
+                <div class="stat"><div class="label">持有中订单金额（元）</div><div class="value money">${UI.money(stats.tradeAmount)}</div></div>
+                <div class="stat"><div class="label">持仓笔数</div><div class="value">${stats.holdingCount}</div></div>`;
+        } catch (error) {
+            UI.handleError(error);
+        }
+    }
+
+    async function loadProducts() {
+        const params = new URLSearchParams({
+            page: state.product.page,
+            size: state.product.size,
+            admin: 'true'
+        });
+        if (state.product.keyword) {
+            params.set('keyword', state.product.keyword);
+        }
+        const body = document.getElementById('product-body');
+        body.innerHTML = '<tr><td colspan="10">加载中…</td></tr>';
+        try {
+            const result = await API.get('/api/admin/products?' + params.toString());
+            body.innerHTML = result.list.length ? result.list.map(item => `
+                <tr>
+                    <td>${UI.escape(item.code)}</td>
+                    <td>${UI.escape(item.name)}</td>
+                    <td>${UI.escape(item.category)}</td>
+                    <td>${UI.riskBadge(item.riskLevel)}</td>
+                    <td class="num">${item.expectedReturn}%</td>
+                    <td>${UI.termText(item.termDays)}</td>
+                    <td class="num">${UI.money(item.minAmount)}</td>
+                    <td class="num">${UI.money(item.soldAmount)} / ${UI.money(item.totalAmount)}</td>
+                    <td>${item.status === 1 ? '<span class="badge badge-green">上架</span>' : '<span class="badge badge-gray">下架</span>'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" data-action="edit" data-id="${item.id}">编辑</button>
+                        <button class="btn btn-sm btn-outline" data-action="toggle" data-id="${item.id}" data-status="${item.status}">
+                            ${item.status === 1 ? '下架' : '上架'}
+                        </button>
+                        <button class="btn btn-sm btn-danger" data-action="delete" data-id="${item.id}">删除</button>
+                    </td>
+                </tr>`).join('') : `<tr><td colspan="10">${UI.empty('暂无产品')}</td></tr>`;
+            document.getElementById('product-pagination').innerHTML = pagination(result);
+            state.product.lastList = result.list;
+        } catch (error) {
+            UI.handleError(error);
+        }
+    }
+
+    async function loadOrders() {
+        const params = new URLSearchParams({ page: state.order.page, size: state.order.size });
+        if (state.order.status) params.set('status', state.order.status);
+        if (state.order.keyword) params.set('keyword', state.order.keyword);
+        const body = document.getElementById('order-body');
+        body.innerHTML = '<tr><td colspan="7">加载中…</td></tr>';
+        try {
+            const result = await API.get('/api/admin/orders?' + params.toString());
+            body.innerHTML = result.list.length ? result.list.map(order => `
+                <tr>
+                    <td>${UI.escape(order.orderNo)}</td>
+                    <td>${UI.escape(order.username || '-')}</td>
+                    <td>${UI.escape(order.productName || '-')}</td>
+                    <td class="num">${UI.money(order.amount)}</td>
+                    <td class="num money">${UI.money(order.expectedIncome)}</td>
+                    <td>${UI.datetime(order.createdAt)}</td>
+                    <td>${UI.orderStatusBadge(order.status)}</td>
+                </tr>`).join('') : `<tr><td colspan="7">${UI.empty('暂无订单')}</td></tr>`;
+            document.getElementById('order-pagination').innerHTML = pagination(result);
+        } catch (error) {
+            UI.handleError(error);
+        }
+    }
+
+    async function loadUsers() {
+        const params = new URLSearchParams({ page: state.user.page, size: state.user.size });
+        const body = document.getElementById('user-body');
+        body.innerHTML = '<tr><td colspan="9">加载中…</td></tr>';
+        try {
+            const result = await API.get('/api/admin/users?' + params.toString());
+            body.innerHTML = result.list.length ? result.list.map(user => `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${UI.escape(user.username)}</td>
+                    <td>${UI.escape(user.realName || '-')}</td>
+                    <td>${UI.escape(user.phone || '-')}</td>
+                    <td>${user.role === 'ADMIN' ? '<span class="badge badge-blue">管理员</span>' : '<span class="badge badge-gray">客户</span>'}</td>
+                    <td class="num">${UI.money(user.balance)}</td>
+                    <td>${UI.riskBadge(user.riskLevel)}</td>
+                    <td>${user.status === 1 ? '<span class="badge badge-green">正常</span>' : '<span class="badge badge-red">禁用</span>'}</td>
+                    <td>
+                        <button class="btn btn-sm ${user.status === 1 ? 'btn-danger' : 'btn-outline'}"
+                                data-user="${user.id}" data-status="${user.status}">
+                            ${user.status === 1 ? '禁用' : '启用'}
+                        </button>
+                    </td>
+                </tr>`).join('') : `<tr><td colspan="9">${UI.empty('暂无用户')}</td></tr>`;
+            document.getElementById('user-pagination').innerHTML = pagination(result);
+        } catch (error) {
+            UI.handleError(error);
+        }
+    }
+
+    function openProductModal(product) {
+        document.getElementById('product-error').textContent = '';
+        document.getElementById('product-form').reset();
+        document.getElementById('p-id').value = product ? product.id : '';
+        document.getElementById('modal-title').textContent = product ? '编辑产品' : '新建产品';
+        if (product) {
+            document.getElementById('p-name').value = product.name;
+            document.getElementById('p-code').value = product.code;
+            document.getElementById('p-category').value = product.category;
+            document.getElementById('p-risk').value = product.riskLevel;
+            document.getElementById('p-return').value = product.expectedReturn;
+            document.getElementById('p-term').value = product.termDays;
+            document.getElementById('p-min').value = product.minAmount;
+            document.getElementById('p-total').value = product.totalAmount;
+            document.getElementById('p-manager').value = product.manager || '';
+            document.getElementById('p-desc').value = product.description || '';
+            document.getElementById('p-status').value = String(product.status);
+        }
+        document.getElementById('product-modal').classList.add('open');
+    }
+
+    function closeProductModal() {
+        document.getElementById('product-modal').classList.remove('open');
+    }
+
+    async function submitProduct(event) {
+        event.preventDefault();
+        const id = document.getElementById('p-id').value;
+        const payload = {
+            name: document.getElementById('p-name').value.trim(),
+            code: document.getElementById('p-code').value.trim() || null,
+            category: document.getElementById('p-category').value,
+            riskLevel: document.getElementById('p-risk').value,
+            expectedReturn: Number(document.getElementById('p-return').value),
+            termDays: Number(document.getElementById('p-term').value),
+            minAmount: Number(document.getElementById('p-min').value),
+            totalAmount: Number(document.getElementById('p-total').value),
+            manager: document.getElementById('p-manager').value.trim(),
+            description: document.getElementById('p-desc').value.trim(),
+            status: Number(document.getElementById('p-status').value)
+        };
+        const errorBox = document.getElementById('product-error');
+        errorBox.textContent = '';
+        try {
+            if (id) {
+                await API.put('/api/admin/products/' + id, payload);
+                UI.toast('产品已更新', 'success');
+            } else {
+                await API.post('/api/admin/products', payload);
+                UI.toast('产品已创建', 'success');
+            }
+            closeProductModal();
+            await loadProducts();
+            await loadStats();
+        } catch (error) {
+            errorBox.textContent = error.message;
+        }
+    }
+
+    document.getElementById('product-body').addEventListener('click', async event => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) {
+            return;
+        }
+        const id = button.dataset.id;
+        const action = button.dataset.action;
+        try {
+            if (action === 'edit') {
+                const product = (state.product.lastList || []).find(item => String(item.id) === String(id));
+                if (product) {
+                    openProductModal(product);
+                }
+            } else if (action === 'toggle') {
+                const next = button.dataset.status === '1' ? 0 : 1;
+                await API.patch('/api/admin/products/' + id + '/status?status=' + next);
+                UI.toast(next === 1 ? '产品已上架' : '产品已下架', 'success');
+                await loadProducts();
+            } else if (action === 'delete') {
+                if (!confirm('确认删除该产品吗？已有交易记录的产品不能删除。')) {
+                    return;
+                }
+                await API.del('/api/admin/products/' + id);
+                UI.toast('产品已删除', 'success');
+                await loadProducts();
+                await loadStats();
+            }
+        } catch (error) {
+            UI.handleError(error);
+        }
+    });
+
+    document.getElementById('product-pagination').addEventListener('click', event => {
+        const target = event.target.closest('button[data-page]');
+        if (!target || target.disabled) return;
+        state.product.page = Number(target.dataset.page);
+        loadProducts();
+    });
+
+    document.getElementById('order-pagination').addEventListener('click', event => {
+        const target = event.target.closest('button[data-page]');
+        if (!target || target.disabled) return;
+        state.order.page = Number(target.dataset.page);
+        loadOrders();
+    });
+
+    document.getElementById('user-pagination').addEventListener('click', event => {
+        const target = event.target.closest('button[data-page]');
+        if (!target || target.disabled) return;
+        state.user.page = Number(target.dataset.page);
+        loadUsers();
+    });
+
+    document.getElementById('user-body').addEventListener('click', async event => {
+        const button = event.target.closest('button[data-user]');
+        if (!button) {
+            return;
+        }
+        const next = button.dataset.status === '1' ? 0 : 1;
+        if (!confirm(next === 1 ? '确认启用该账号？' : '确认禁用该账号？')) {
+            return;
+        }
+        try {
+            await API.patch('/api/admin/users/' + button.dataset.user + '/status?status=' + next);
+            UI.toast(next === 1 ? '账号已启用' : '账号已禁用', 'success');
+            await loadUsers();
+        } catch (error) {
+            UI.handleError(error);
+        }
+    });
+
+    (async function () {
+        const me = await initLayout('admin');
+        if (!me) {
+            location.href = 'login.html?redirect=admin.html';
+            return;
+        }
+        if (me.role !== 'ADMIN') {
+            document.getElementById('admin-root').innerHTML = `
+                <div class="card" style="text-align:center;padding:40px">
+                    <h3>需要管理员权限</h3>
+                    <p style="color:#6b7c8f">请使用管理员账号登录后访问本页面。</p>
+                    <a class="btn btn-gold" href="index.html">返回首页</a>
+                </div>`;
+            return;
+        }
+        renderShell();
+        await Promise.all([loadStats(), loadProducts(), loadOrders(), loadUsers()]);
+    })();
+</script>
+</body>
+</html>

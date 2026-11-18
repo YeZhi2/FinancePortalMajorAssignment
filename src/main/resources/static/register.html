@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>注册 · 汇金财富</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="page">
+    <div class="auth-wrap">
+        <section class="card auth-card">
+            <h2>创建账户</h2>
+            <p class="sub">注册即获得 100,000 元模拟资金，用于体验完整投资流程</p>
+            <form id="register-form">
+                <div class="form-row">
+                    <label for="username">用户名</label>
+                    <input class="input" id="username" autocomplete="username" placeholder="3~20 位字母、数字或下划线" required>
+                </div>
+                <div class="form-row">
+                    <label for="realName">真实姓名</label>
+                    <input class="input" id="realName" placeholder="用于展示账户信息" required>
+                </div>
+                <div class="form-row">
+                    <label for="password">密码</label>
+                    <input class="input" id="password" type="password" autocomplete="new-password" placeholder="6~32 位" required>
+                </div>
+                <div class="form-row">
+                    <label for="confirm">确认密码</label>
+                    <input class="input" id="confirm" type="password" autocomplete="new-password" required>
+                </div>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="phone">手机号（选填）</label>
+                        <input class="input" id="phone" placeholder="11 位手机号">
+                    </div>
+                    <div class="form-row">
+                        <label for="email">邮箱（选填）</label>
+                        <input class="input" id="email" type="email" placeholder="name@example.com">
+                    </div>
+                </div>
+                <p class="error-text" id="register-error"></p>
+                <button class="btn btn-gold" type="submit" id="register-btn" style="width:100%">注册并登录</button>
+            </form>
+            <p class="auth-foot">已有账号？<a href="login.html">去登录</a></p>
+        </section>
+    </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+    document.getElementById('register-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const errorBox = document.getElementById('register-error');
+        errorBox.textContent = '';
+        const password = document.getElementById('password').value;
+        if (password !== document.getElementById('confirm').value) {
+            errorBox.textContent = '两次输入的密码不一致';
+            return;
+        }
+        const button = document.getElementById('register-btn');
+        button.disabled = true;
+        try {
+            const user = await API.post('/api/auth/register', {
+                username: document.getElementById('username').value.trim(),
+                password: password,
+                realName: document.getElementById('realName').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                email: document.getElementById('email').value.trim()
+            });
+            UI.toast('注册成功，欢迎 ' + (user.realName || user.username), 'success');
+            setTimeout(() => { location.href = 'risk.html'; }, 700);
+        } catch (error) {
+            errorBox.textContent = error.message;
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    (async function () {
+        await initLayout('');
+    })();
+</script>
+</body>
+</html>

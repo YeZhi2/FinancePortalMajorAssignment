@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.finance.portal.mapper.OrderMapper">
+
+    <sql id="orderColumns">
+        o.id, o.order_no, o.user_id, o.product_id, o.amount, o.shares, o.net_value, o.expected_income,
+        o.status, o.created_at, o.updated_at
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" parameterType="com.finance.portal.entity.InvestOrder">
+        INSERT INTO t_invest_order (order_no, user_id, product_id, amount, shares, net_value, expected_income,
+                                    status, created_at, updated_at)
+        VALUES (#{orderNo}, #{userId}, #{productId}, #{amount}, #{shares}, #{netValue}, #{expectedIncome},
+                #{status}, NOW(), NOW())
+    </insert>
+
+    <select id="findByIdAndUser" resultType="com.finance.portal.entity.InvestOrder">
+        SELECT <include refid="orderColumns"/>, p.name AS product_name
+        FROM t_invest_order o
+        LEFT JOIN t_product p ON p.id = o.product_id
+        WHERE o.id = #{id} AND o.user_id = #{userId}
+    </select>
+
+    <select id="findByUser" resultType="com.finance.portal.entity.InvestOrder">
+        SELECT <include refid="orderColumns"/>, p.name AS product_name
+        FROM t_invest_order o
+        LEFT JOIN t_product p ON p.id = o.product_id
+        WHERE o.user_id = #{userId}
+        ORDER BY o.id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM t_invest_order WHERE user_id = #{userId}
+    </select>
+
+    <select id="findPage" resultType="com.finance.portal.entity.InvestOrder">
+        SELECT <include refid="orderColumns"/>, p.name AS product_name, u.username
+        FROM t_invest_order o
+        LEFT JOIN t_product p ON p.id = o.product_id
+        LEFT JOIN t_user u ON u.id = o.user_id
+        <where>
+            <if test="status != null and status != ''">
+                AND o.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (o.order_no LIKE CONCAT('%', #{keyword}, '%')
+                     OR p.name LIKE CONCAT('%', #{keyword}, '%')
+                     OR u.username LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+        ORDER BY o.id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*)
+        FROM t_invest_order o
+        LEFT JOIN t_product p ON p.id = o.product_id
+        LEFT JOIN t_user u ON u.id = o.user_id
+        <where>
+            <if test="status != null and status != ''">
+                AND o.status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (o.order_no LIKE CONCAT('%', #{keyword}, '%')
+                     OR p.name LIKE CONCAT('%', #{keyword}, '%')
+                     OR u.username LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+        </where>
+    </select>
+
+    <update id="updateStatus">
+        UPDATE t_invest_order SET status = #{status}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM t_invest_order
+    </select>
+
+    <select id="sumAmountByStatus" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0) FROM t_invest_order WHERE status = #{status}
+    </select>
+
+    <select id="countByProduct" resultType="long">
+        SELECT COUNT(*) FROM t_invest_order WHERE product_id = #{productId}
+    </select>
+
+</mapper>

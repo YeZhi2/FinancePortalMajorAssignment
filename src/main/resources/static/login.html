@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>登录 · 汇金财富</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="page">
+    <div class="auth-wrap">
+        <section class="card auth-card">
+            <h2>欢迎回来</h2>
+            <p class="sub">登录后可进行风险测评、购买产品与查看持仓</p>
+            <form id="login-form">
+                <div class="form-row">
+                    <label for="username">用户名</label>
+                    <input class="input" id="username" name="username" autocomplete="username" required>
+                </div>
+                <div class="form-row">
+                    <label for="password">密码</label>
+                    <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+                </div>
+                <p class="error-text" id="login-error"></p>
+                <button class="btn btn-gold" type="submit" id="login-btn" style="width:100%">登录</button>
+            </form>
+            <p class="auth-foot">还没有账号？<a href="register.html">立即注册</a></p>
+            <p class="help" style="text-align:center;margin-top:10px">
+                演示账号：客户 customer / 123456，管理员 admin / admin123
+            </p>
+        </section>
+    </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+    document.getElementById('login-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const errorBox = document.getElementById('login-error');
+        errorBox.textContent = '';
+        const button = document.getElementById('login-btn');
+        button.disabled = true;
+        try {
+            const user = await API.post('/api/auth/login', {
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value
+            });
+            UI.toast('登录成功，欢迎 ' + (user.realName || user.username), 'success');
+            const redirect = new URLSearchParams(location.search).get('redirect');
+            const target = redirect && !/^https?:|\/\//i.test(redirect) ? redirect : (user.role === 'ADMIN' ? 'admin.html' : 'index.html');
+            setTimeout(() => { location.href = target; }, 500);
+        } catch (error) {
+            errorBox.textContent = error.message;
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    (async function () {
+        const me = await initLayout('');
+        if (me) {
+            document.getElementById('login-error').textContent = '当前已登录：' + (me.realName || me.username);
+        }
+    })();
+</script>
+</body>
+</html>

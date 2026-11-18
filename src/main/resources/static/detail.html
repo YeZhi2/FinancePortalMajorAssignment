@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>产品详情 · 汇金财富</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="page">
+    <div class="section-head">
+        <h2 id="page-title">产品详情</h2>
+        <a href="products.html">← 返回产品中心</a>
+    </div>
+
+    <div id="detail-root">
+        <div class="empty">加载中…</div>
+    </div>
+
+    <div class="grid grid-2" id="detail-body" style="display:none">
+        <section class="card" id="product-info"></section>
+        <section class="card">
+            <div class="card-title">购买产品</div>
+            <form id="buy-form">
+                <div class="form-row">
+                    <label for="amount">投资金额（元）</label>
+                    <input class="input" type="number" id="amount" min="0" step="0.01" placeholder="请输入投资金额">
+                    <div class="help" id="amount-help"></div>
+                </div>
+                <div class="form-row" id="quick-amounts"></div>
+                <div class="stat" style="box-shadow:none;background:#f7fafc;margin-bottom:16px">
+                    <div class="label">预计到期收益（参考）</div>
+                    <div class="value money" id="estimated-income">0.00 元</div>
+                </div>
+                <p class="error-text" id="buy-error"></p>
+                <div class="form-actions">
+                    <button class="btn btn-gold" type="submit" id="buy-btn">立即购买</button>
+                </div>
+                <p class="help">购买前需完成风险测评，且产品风险等级不得高于您的承受能力等级。本平台为教学演示，不涉及真实资金。</p>
+            </form>
+        </section>
+    </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script>
+    const productId = new URLSearchParams(location.search).get('id');
+    let product = null;
+
+    function termText(termDays) {
+        return termDays && termDays > 0 ? termDays + ' 天' : '活期（随时赎回）';
+    }
+
+    function render(product) {
+        document.getElementById('page-title').textContent = product.name;
+        document.getElementById('detail-root').style.display = 'none';
+        document.getElementById('detail-body').style.display = 'grid';
+
+        const remaining = Math.max(0, Number(product.totalAmount) - Number(product.soldAmount));
+        document.getElementById('product-info').innerHTML = `
+            <div class="product-head">
+                <div>
+                    <div class="product-name" style="font-size:22px">${UI.escape(product.name)}</div>
+                    <div class="product-code">${UI.escape(product.code)} · ${UI.escape(product.category)}</div>
+                </div>
+                ${UI.riskBadge(product.riskLevel)}
+            </div>
+            <div class="product-rate" style="margin:16px 0">${product.expectedReturn}<small>% 预期年化</small></div>
+            <div class="stat-grid" style="margin-bottom:16px">
+                <div class="stat" style="box-shadow:none">
+                    <div class="label">投资期限</div><div class="value" style="font-size:18px">${termText(product.termDays)}</div>
+                </div>
+                <div class="stat" style="box-shadow:none">
+                    <div class="label">起投金额</div><div class="value" style="font-size:18px">${UI.money(product.minAmount)} 元</div>
+                </div>
+                <div class="stat" style="box-shadow:none">
+                    <div class="label">募集总额</div><div class="value" style="font-size:18px">${UI.money(product.totalAmount)} 元</div>
+                </div>
+                <div class="stat" style="box-shadow:none">
+                    <div class="label">剩余额度</div><div class="value" style="font-size:18px">${UI.money(remaining)} 元</div>
+                </div>
+            </div>
+            <p><strong>产品管理人：</strong>${UI.escape(product.manager || '—')}</p>
+            <p><strong>风险等级：</strong>${UI.riskBadge(product.riskLevel)}</p>
+            <p style="color:#41536a">${UI.escape(product.description || '暂无产品说明')}</p>`;
+
+        document.getElementById('amount-help').textContent =
+            `起投 ${UI.money(product.minAmount)} 元，剩余可投 ${UI.money(remaining)} 元`;
+        document.getElementById('amount').min = product.minAmount;
+
+        const quick = [Number(product.minAmount), 10000, 50000, 100000]
+            .filter((value, index, array) => value > 0 && array.indexOf(value) === index);
+        document.getElementById('quick-amounts').innerHTML = quick
+            .map(value => `<button type="button" class="btn btn-sm btn-outline quick" data-amount="${value}">${UI.money(value)}</button>`)
+            .join(' ');
+    }
+
+    function updateEstimate() {
+        if (!product) return;
+        const amount = Number(document.getElementById('amount').value || 0);
+        const days = product.termDays > 0 ? product.termDays : 365;
+        const income = amount * Number(product.expectedReturn) / 100 * days / 365;
+        document.getElementById('estimated-income').textContent = UI.money(income) + ' 元';
+    }
+
+    document.getElementById('amount').addEventListener('input', updateEstimate);
+
+    document.getElementById('quick-amounts').addEventListener('click', event => {
+        const button = event.target.closest('button.quick');
+        if (!button) return;
+        document.getElementById('amount').value = button.dataset.amount;
+        updateEstimate();
+    });
+
+    document.getElementById('buy-form').addEventListener('submit', async event => {
+        event.preventDefault();
+        const errorBox = document.getElementById('buy-error');
+        errorBox.textContent = '';
+        if (!window.__ME__) {
+            location.href = UI.loginUrl();
+            return;
+        }
+        const amount = Number(document.getElementById('amount').value);
+        if (!amount || amount <= 0) {
+            errorBox.textContent = '请输入有效的投资金额';
+            return;
+        }
+        if (amount < Number(product.minAmount)) {
+            errorBox.textContent = '投资金额不能低于起投金额 ' + UI.money(product.minAmount) + ' 元';
+            return;
+        }
+        const button = document.getElementById('buy-btn');
+        button.disabled = true;
+        try {
+            const order = await API.post('/api/orders', { productId: product.id, amount: amount });
+            UI.toast('购买成功，订单号 ' + order.orderNo, 'success');
+            setTimeout(() => { location.href = 'portfolio.html'; }, 900);
+        } catch (error) {
+            if (error.status === 401) {
+                location.href = UI.loginUrl();
+                return;
+            }
+            errorBox.textContent = error.message;
+            UI.toast(error.message, 'error');
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    (async function () {
+        await initLayout('');
+        if (!productId) {
+            document.getElementById('detail-root').innerHTML = UI.empty('缺少产品参数');
+            return;
+        }
+        try {
+            product = await API.get('/api/products/' + encodeURIComponent(productId));
+            render(product);
+            updateEstimate();
+        } catch (error) {
+            document.getElementById('detail-root').innerHTML = UI.empty(error.message || '产品不存在');
+        }
+    })();
+</script>
+</body>
+</html>
