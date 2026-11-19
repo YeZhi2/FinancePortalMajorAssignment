@@ -30,13 +30,13 @@
                     <div class="help" id="amount-help"></div>
                 </div>
                 <div class="form-row" id="quick-amounts"></div>
-                <div class="stat" style="box-shadow:none;background:#f7fafc;margin-bottom:16px">
+                <div class="stat" style="box-shadow:none;background:var(--surface-tint);margin-bottom:16px">
                     <div class="label">预计到期收益（参考）</div>
                     <div class="value money" id="estimated-income">0.00 元</div>
                 </div>
                 <p class="error-text" id="buy-error"></p>
                 <div class="form-actions">
-                    <button class="btn btn-gold" type="submit" id="buy-btn">立即购买</button>
+                    <button class="btn btn-accent" type="submit" id="buy-btn">立即购买</button>
                 </div>
                 <p class="help">购买前需完成风险测评，且产品风险等级不得高于您的承受能力等级。本平台为教学演示，不涉及真实资金。</p>
             </form>
@@ -85,7 +85,7 @@
             </div>
             <p><strong>产品管理人：</strong>${UI.escape(product.manager || '—')}</p>
             <p><strong>风险等级：</strong>${UI.riskBadge(product.riskLevel)}</p>
-            <p style="color:#41536a">${UI.escape(product.description || '暂无产品说明')}</p>`;
+            <p style="color:var(--text-soft)">${UI.escape(product.description || '暂无产品说明')}</p>`;
 
         document.getElementById('amount-help').textContent =
             `起投 ${UI.money(product.minAmount)} 元，剩余可投 ${UI.money(remaining)} 元`;

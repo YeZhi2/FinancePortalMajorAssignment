@@ -89,7 +89,7 @@
             <p class="error-text" id="product-error"></p>
             <div class="form-actions">
                 <button class="btn btn-outline" type="button" id="modal-cancel">取消</button>
-                <button class="btn btn-gold" type="submit" id="product-save">保存</button>
+                <button class="btn btn-accent" type="submit" id="product-save">保存</button>
             </div>
         </form>
     </div>
@@ -137,7 +137,7 @@
                     </div>
                     <div class="form-row" style="display:flex;gap:10px">
                         <button class="btn btn-outline" type="button" id="p-search">搜索</button>
-                        <button class="btn btn-gold" type="button" id="p-create">新建产品</button>
+                        <button class="btn btn-accent" type="button" id="p-create">新建产品</button>
                     </div>
                 </div>
                 <div class="table-wrap" style="margin-top:16px">
@@ -315,7 +315,7 @@
                     <td>${UI.escape(user.username)}</td>
                     <td>${UI.escape(user.realName || '-')}</td>
                     <td>${UI.escape(user.phone || '-')}</td>
-                    <td>${user.role === 'ADMIN' ? '<span class="badge badge-blue">管理员</span>' : '<span class="badge badge-gray">客户</span>'}</td>
+                    <td>${user.role === 'ADMIN' ? '<span class="badge badge-accent">管理员</span>' : '<span class="badge badge-gray">客户</span>'}</td>
                     <td class="num">${UI.money(user.balance)}</td>
                     <td>${UI.riskBadge(user.riskLevel)}</td>
                     <td>${user.status === 1 ? '<span class="badge badge-green">正常</span>' : '<span class="badge badge-red">禁用</span>'}</td>
@@ -472,8 +472,8 @@
             document.getElementById('admin-root').innerHTML = `
                 <div class="card" style="text-align:center;padding:40px">
                     <h3>需要管理员权限</h3>
-                    <p style="color:#6b7c8f">请使用管理员账号登录后访问本页面。</p>
-                    <a class="btn btn-gold" href="index.html">返回首页</a>
+                    <p style="color:var(--muted)">请使用管理员账号登录后访问本页面。</p>
+                    <a class="btn btn-accent" href="index.html">返回首页</a>
                 </div>`;
             return;
         }

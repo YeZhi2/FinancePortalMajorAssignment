@@ -109,7 +109,7 @@ const UI = {
         return Math.min(100, (Number(product.soldAmount || 0) / total) * 100);
     },
 
-    productCard(product) {
+    productCard(product, selectedForComparison = null) {
         const progress = this.progress(product).toFixed(1);
         return `
         <article class="product-card">
@@ -128,7 +128,11 @@ const UI = {
             </div>
             <div class="product-foot">
                 <span class="hint">${this.escape(product.manager || '—')}</span>
-                <a class="btn btn-sm btn-outline" href="detail.html?id=${product.id}">查看详情</a>
+                <div class="product-actions">
+                    ${selectedForComparison === null ? '' : `<button class="btn btn-sm btn-outline comparison-toggle" type="button"
+                        data-compare-id="${product.id}" aria-pressed="${selectedForComparison}" aria-label="对比 ${this.escape(product.name)}">对比</button>`}
+                    <a class="btn btn-sm btn-outline" href="detail.html?id=${product.id}">查看详情</a>
+                </div>
             </div>
         </article>`;
     },

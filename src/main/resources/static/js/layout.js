@@ -33,7 +33,7 @@ async function initLayout(activeKey) {
         ? `<span class="who">你好，<strong>${UI.escape(me.realName || me.username)}</strong></span>
            <button class="btn btn-sm btn-ghost" id="logout-btn" type="button">退出</button>`
         : `<a class="btn btn-sm btn-ghost" href="login.html">登录</a>
-           <a class="btn btn-sm btn-gold" href="register.html">注册</a>`;
+           <a class="btn btn-sm btn-accent" href="register.html">注册</a>`;
 
     const header = document.getElementById('site-header');
     header.className = 'site-header';

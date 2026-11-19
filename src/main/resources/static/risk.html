@@ -82,7 +82,7 @@
         document.getElementById('risk-root').innerHTML = `
             <div class="card" style="margin-bottom:20px">
                 <div class="card-title">测评说明</div>
-                <p style="color:#41536a;margin:0">
+                <p style="color:var(--text-soft);margin:0">
                     测评结果用于判断您可购买的产品风险范围：C1 保守型只能购买 R1 产品，C5 进取型可购买 R1~R5 全部产品。
                     测评可重复进行，系统以最近一次结果为准。
                 </p>
@@ -91,7 +91,7 @@
                 ${list}
                 <p class="error-text" id="risk-error"></p>
                 <div class="form-actions">
-                    <button class="btn btn-gold" type="submit" id="risk-submit">提交测评</button>
+                    <button class="btn btn-accent" type="submit" id="risk-submit">提交测评</button>
                 </div>
             </form>`;
 
@@ -114,13 +114,13 @@
                 <div class="level">${result.riskLevel} · ${result.customerLabel}</div>
                 <p>${result.description}</p>
                 <div class="hero-actions" style="margin-top:18px">
-                    <a class="btn btn-gold" href="products.html">去找匹配的产品</a>
+                    <a class="btn btn-accent" href="products.html">去找匹配的产品</a>
                     <button class="btn btn-ghost" type="button" id="retake">重新测评</button>
                 </div>
             </div>
             <div class="card" style="margin-top:20px">
                 <div class="card-title">您的可购买范围</div>
-                <p style="margin:0;color:#41536a">
+                <p style="margin:0;color:var(--text-soft)">
                     当前等级 <strong>${result.riskLevel}</strong>，可购买风险等级不高于该等级的产品；更高风险等级的产品会被系统拦截。
                 </p>
             </div>`;
@@ -166,8 +166,8 @@
                 box.style.marginBottom = '20px';
                 box.innerHTML = `
                     <div class="card-title">您当前的测评结论</div>
-                    <p style="margin:0;color:#41536a">
-                        <span class="badge badge-blue">${latest.riskLevel} ${latest.customerLabel}</span>
+                    <p style="margin:0;color:var(--text-soft)">
+                        <span class="badge badge-accent">${latest.riskLevel} ${latest.customerLabel}</span>
                         得分 ${latest.score} / 40，测评时间 ${UI.datetime(latest.createdAt)}。
                         如需调整可重新测评，系统以最新结果为准。
                     </p>`;
@@ -184,8 +184,8 @@
             document.getElementById('risk-root').innerHTML = `
                 <div class="card" style="text-align:center;padding:40px">
                     <h3>请先登录后再进行风险测评</h3>
-                    <p style="color:#6b7c8f">测评结果会保存到您的账户，用于匹配可购买的产品范围。</p>
-                    <a class="btn btn-gold" href="login.html?redirect=risk.html">去登录</a>
+                    <p style="color:var(--muted)">测评结果会保存到您的账户，用于匹配可购买的产品范围。</p>
+                    <a class="btn btn-accent" href="login.html?redirect=risk.html">去登录</a>
                 </div>`;
             return;
         }

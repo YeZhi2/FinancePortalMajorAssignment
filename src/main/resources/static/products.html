@@ -56,17 +56,41 @@
         </div>
     </form>
 
+    <section class="comparison-bar" aria-labelledby="comparison-title">
+        <div>
+            <strong id="comparison-title">产品对比</strong>
+            <p class="hint" id="comparison-count" aria-live="polite" tabindex="-1">已选 0 / 3 款；请选择 2–3 款</p>
+        </div>
+        <div class="comparison-picks" id="comparison-picks"></div>
+        <div class="comparison-actions">
+            <button class="btn btn-sm btn-outline" type="button" id="comparison-clear" disabled>清空</button>
+            <button class="btn btn-sm" type="button" id="comparison-open" disabled>开始对比</button>
+        </div>
+    </section>
+
     <div class="grid grid-3" id="product-list" style="margin-top:20px">
         <div class="empty">加载中…</div>
     </div>
 
     <div class="pagination" id="pagination"></div>
+
+    <dialog class="comparison-dialog" id="comparison-dialog" aria-labelledby="comparison-dialog-title">
+        <div class="comparison-dialog-head">
+            <h2 id="comparison-dialog-title">理财产品对比</h2>
+            <form method="dialog"><button class="btn btn-sm btn-outline" type="submit" autofocus>关闭</button></form>
+        </div>
+        <p class="hint">预期年化收益率不代表实际收益。对比不替代风险测评，不构成购买建议。</p>
+        <p class="comparison-scroll-hint">左右滑动查看全部产品</p>
+        <div class="table-wrap comparison-table" id="comparison-table" tabindex="0" role="region" aria-label="产品对比表"></div>
+    </dialog>
 </main>
 
 <script src="js/api.js"></script>
 <script src="js/layout.js"></script>
+<script src="js/product-comparison.js"></script>
 <script>
     const state = { page: 1, size: 9, keyword: '', category: '', riskLevel: '', sort: '' };
+    const comparison = initProductComparison();
 
     function buildQuery() {
         const params = new URLSearchParams();
@@ -85,8 +109,9 @@
         try {
             const result = await API.get('/api/products?' + buildQuery());
             document.getElementById('result-hint').textContent = '共 ' + result.total + ' 款产品';
+            comparison.setVisibleProducts(result.list);
             listBox.innerHTML = result.list.length
-                ? result.list.map(p => UI.productCard(p)).join('')
+                ? result.list.map(product => UI.productCard(product, comparison.isSelected(product.id))).join('')
                 : UI.empty('没有符合条件的产品，试试放宽筛选条件');
             renderPagination(result);
         } catch (error) {
