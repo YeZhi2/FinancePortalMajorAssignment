@@ -224,6 +224,9 @@
         document.getElementById('p-create').addEventListener('click', () => openProductModal(null));
         document.getElementById('modal-cancel').addEventListener('click', closeProductModal);
         document.getElementById('product-form').addEventListener('submit', submitProduct);
+
+        // 表格与分页的事件委托必须在 innerHTML 渲染完成后绑定，否则取不到节点
+        bindTableEvents();
     }
 
     async function loadStats() {
@@ -391,76 +394,78 @@
         }
     }
 
-    document.getElementById('product-body').addEventListener('click', async event => {
-        const button = event.target.closest('button[data-action]');
-        if (!button) {
-            return;
-        }
-        const id = button.dataset.id;
-        const action = button.dataset.action;
-        try {
-            if (action === 'edit') {
-                const product = (state.product.lastList || []).find(item => String(item.id) === String(id));
-                if (product) {
-                    openProductModal(product);
-                }
-            } else if (action === 'toggle') {
-                const next = button.dataset.status === '1' ? 0 : 1;
-                await API.patch('/api/admin/products/' + id + '/status?status=' + next);
-                UI.toast(next === 1 ? '产品已上架' : '产品已下架', 'success');
-                await loadProducts();
-            } else if (action === 'delete') {
-                if (!confirm('确认删除该产品吗？已有交易记录的产品不能删除。')) {
-                    return;
-                }
-                await API.del('/api/admin/products/' + id);
-                UI.toast('产品已删除', 'success');
-                await loadProducts();
-                await loadStats();
+    function bindTableEvents() {
+        document.getElementById('product-body').addEventListener('click', async event => {
+            const button = event.target.closest('button[data-action]');
+            if (!button) {
+                return;
             }
-        } catch (error) {
-            UI.handleError(error);
-        }
-    });
+            const id = button.dataset.id;
+            const action = button.dataset.action;
+            try {
+                if (action === 'edit') {
+                    const product = (state.product.lastList || []).find(item => String(item.id) === String(id));
+                    if (product) {
+                        openProductModal(product);
+                    }
+                } else if (action === 'toggle') {
+                    const next = button.dataset.status === '1' ? 0 : 1;
+                    await API.patch('/api/admin/products/' + id + '/status?status=' + next);
+                    UI.toast(next === 1 ? '产品已上架' : '产品已下架', 'success');
+                    await loadProducts();
+                } else if (action === 'delete') {
+                    if (!confirm('确认删除该产品吗？已有交易记录的产品不能删除。')) {
+                        return;
+                    }
+                    await API.del('/api/admin/products/' + id);
+                    UI.toast('产品已删除', 'success');
+                    await loadProducts();
+                    await loadStats();
+                }
+            } catch (error) {
+                UI.handleError(error);
+            }
+        });
 
-    document.getElementById('product-pagination').addEventListener('click', event => {
-        const target = event.target.closest('button[data-page]');
-        if (!target || target.disabled) return;
-        state.product.page = Number(target.dataset.page);
-        loadProducts();
-    });
+        document.getElementById('product-pagination').addEventListener('click', event => {
+            const target = event.target.closest('button[data-page]');
+            if (!target || target.disabled) return;
+            state.product.page = Number(target.dataset.page);
+            loadProducts();
+        });
 
-    document.getElementById('order-pagination').addEventListener('click', event => {
-        const target = event.target.closest('button[data-page]');
-        if (!target || target.disabled) return;
-        state.order.page = Number(target.dataset.page);
-        loadOrders();
-    });
+        document.getElementById('order-pagination').addEventListener('click', event => {
+            const target = event.target.closest('button[data-page]');
+            if (!target || target.disabled) return;
+            state.order.page = Number(target.dataset.page);
+            loadOrders();
+        });
 
-    document.getElementById('user-pagination').addEventListener('click', event => {
-        const target = event.target.closest('button[data-page]');
-        if (!target || target.disabled) return;
-        state.user.page = Number(target.dataset.page);
-        loadUsers();
-    });
+        document.getElementById('user-pagination').addEventListener('click', event => {
+            const target = event.target.closest('button[data-page]');
+            if (!target || target.disabled) return;
+            state.user.page = Number(target.dataset.page);
+            loadUsers();
+        });
 
-    document.getElementById('user-body').addEventListener('click', async event => {
-        const button = event.target.closest('button[data-user]');
-        if (!button) {
-            return;
-        }
-        const next = button.dataset.status === '1' ? 0 : 1;
-        if (!confirm(next === 1 ? '确认启用该账号？' : '确认禁用该账号？')) {
-            return;
-        }
-        try {
-            await API.patch('/api/admin/users/' + button.dataset.user + '/status?status=' + next);
-            UI.toast(next === 1 ? '账号已启用' : '账号已禁用', 'success');
-            await loadUsers();
-        } catch (error) {
-            UI.handleError(error);
-        }
-    });
+        document.getElementById('user-body').addEventListener('click', async event => {
+            const button = event.target.closest('button[data-user]');
+            if (!button) {
+                return;
+            }
+            const next = button.dataset.status === '1' ? 0 : 1;
+            if (!confirm(next === 1 ? '确认启用该账号？' : '确认禁用该账号？')) {
+                return;
+            }
+            try {
+                await API.patch('/api/admin/users/' + button.dataset.user + '/status?status=' + next);
+                UI.toast(next === 1 ? '账号已启用' : '账号已禁用', 'success');
+                await loadUsers();
+            } catch (error) {
+                UI.handleError(error);
+            }
+        });
+    }
 
     (async function () {
         const me = await initLayout('admin');
