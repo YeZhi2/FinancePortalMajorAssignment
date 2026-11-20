@@ -33,8 +33,11 @@ FinancePortalMajorAssignment/
 ├── pom.xml                       Maven 工程描述
 ├── README.md                     本文件（启动说明）
 ├── docs/
-│   ├── requirements.md           需求文档（功能/角色/流程/页面/接口/数据模型）
-│   ├── ai-usage.md               AI 使用记录（提示词、产出、人工验证与修改）
+│   ├── 需求文档.docx             需求文档（Word 版，提交用）
+│   ├── AI使用记录.docx           AI 使用记录（Word 版，提交用）
+│   ├── 启动说明.docx             启动说明（Word 版，由 README 生成）
+│   ├── requirements.md           需求文档源文件（Markdown）
+│   ├── ai-usage.md               AI 使用记录源文件（Markdown）
 │   └── 金融理财产品门户大作业.docx   原始作业要求及本组实现补充
 ├── sql/
 │   ├── schema.sql                建库建表脚本（可重复执行，会重建表）
@@ -183,11 +186,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-test.ps1
 
 | 作业要求 | 本项目对应内容 |
 | --- | --- |
-| 需求文档（功能清单、角色、流程、页面/接口清单） | [docs/requirements.md](docs/requirements.md) |
-| 代码仓库（完整源码 + 数据库脚本 + 启动说明） | 本仓库 + [sql/schema.sql](sql/schema.sql) + [sql/data.sql](sql/data.sql) + 本文档 |
-| AI 使用记录（提示词、产出摘要、人工验证与修改） | [docs/ai-usage.md](docs/ai-usage.md) |
+| 需求文档（功能清单、角色、流程、页面/接口清单） | [docs/需求文档.docx](docs/需求文档.docx)（Word 版）；源文件 [docs/requirements.md](docs/requirements.md) |
+| 代码仓库（完整源码 + 数据库脚本 + 启动说明） | 本仓库 + [sql/schema.sql](sql/schema.sql) + [sql/data.sql](sql/data.sql) + 本文档（另有 [docs/启动说明.docx](docs/启动说明.docx)） |
+| AI 使用记录（提示词、产出摘要、人工验证与修改） | [docs/AI使用记录.docx](docs/AI使用记录.docx)（Word 版）；源文件 [docs/ai-usage.md](docs/ai-usage.md) |
 
-> 打包提交：`dist/FinancePortalMajorAssignment-v1.0.zip` 是标签 `v1.0`（提交 `1346668`）的静态快照，内容与本仓库该标签一致，校验值见 `dist/SHA256SUMS.txt`。若课程平台要求上传单个文件，直接使用该压缩包。
+> 打包提交：`dist/FinancePortalMajorAssignment-v1.1.zip` 是标签 `v1.1` 的静态快照，内容与本仓库该标签一致，校验值见 `dist/SHA256SUMS.txt`。若课程平台要求上传单个文件，直接使用该压缩包。
 
 ## 声明
 
