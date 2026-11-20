@@ -33,7 +33,7 @@ public class AuthController {
     public ApiResponse<LoginUser> register(@Valid @RequestBody RegisterRequest request,
                                            HttpServletRequest servletRequest) {
         LoginUser user = userService.register(request);
-        servletRequest.getSession(true).setAttribute(Constants.SESSION_USER, user);
+        establishSession(servletRequest, user);
         return ApiResponse.ok(user);
     }
 
@@ -41,8 +41,17 @@ public class AuthController {
     public ApiResponse<LoginUser> login(@Valid @RequestBody LoginRequest request,
                                         HttpServletRequest servletRequest) {
         LoginUser user = userService.login(request);
-        servletRequest.getSession(true).setAttribute(Constants.SESSION_USER, user);
+        establishSession(servletRequest, user);
         return ApiResponse.ok(user);
+    }
+
+    /**
+     * 写入登录态：先更换会话 ID，避免会话固定攻击。
+     */
+    private void establishSession(HttpServletRequest request, LoginUser user) {
+        HttpSession session = request.getSession(true);
+        request.changeSessionId();
+        session.setAttribute(Constants.SESSION_USER, user);
     }
 
     @PostMapping("/logout")

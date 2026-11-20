@@ -40,7 +40,7 @@ public class ProductService {
         query.setAdmin(Boolean.FALSE);
         long total = productMapper.count(query);
         List<Product> list = productMapper.findPage(query);
-        return PageResult.of(total, query.getPage(), query.getLimit(), list);
+        return PageResult.of(total, query.getPageNumber(), query.getPageSize(), list);
     }
 
     /**
@@ -50,7 +50,7 @@ public class ProductService {
         query.setAdmin(Boolean.TRUE);
         long total = productMapper.count(query);
         List<Product> list = productMapper.findPage(query);
-        return PageResult.of(total, query.getPage(), query.getLimit(), list);
+        return PageResult.of(total, query.getPageNumber(), query.getPageSize(), list);
     }
 
     public Product detail(Long id) {

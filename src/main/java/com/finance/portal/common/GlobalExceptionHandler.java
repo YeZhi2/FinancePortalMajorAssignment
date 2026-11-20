@@ -3,16 +3,21 @@ package com.finance.portal.common;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
- * 全局异常处理：把业务异常、参数校验异常和未知异常统一转换为 ApiResponse。
+ * 全局异常处理：把业务异常、参数校验异常与客户端请求错误统一转换为 ApiResponse，
+ * 避免把可预期的 4xx 情况一律当成 500 返回。
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -40,6 +45,41 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNotFound(NoResourceFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(404, "请求的接口不存在"));
+    }
+
+    /**
+     * 请求方法不支持，例如用 PATCH 调用只提供 GET 的接口。
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse.error(405, "该接口不支持 " + ex.getMethod() + " 请求"));
+    }
+
+    /**
+     * 请求体不是合法 JSON，或字段类型无法解析。
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnreadable(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.error(400, "请求体格式不正确，请检查 JSON 内容"));
+    }
+
+    /**
+     * 路径变量或查询参数类型不匹配，例如 /api/products/abc 中的 id。
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(400, "参数 " + ex.getName() + " 的取值不合法"));
+    }
+
+    /**
+     * 唯一键冲突（如并发注册同名用户），转成可读的业务提示。
+     */
+    @ExceptionHandler(DuplicateKeyException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDuplicateKey(DuplicateKeyException ex) {
+        log.warn("唯一键冲突: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(ApiResponse.error(400, "数据已存在，请勿重复提交"));
     }
 
     @ExceptionHandler(Exception.class)

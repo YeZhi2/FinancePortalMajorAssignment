@@ -64,7 +64,7 @@ FinancePortalMajorAssignment/
 
 | 组件 | 版本 |
 | --- | --- |
-| JDK | 21（Spring Boot 3 要求 17+） |
+| JDK | 17+（Spring Boot 3 要求 17 及以上，本项目在 JDK 21 上验证） |
 | Maven | 3.9+ |
 | MySQL | 8.0+ |
 

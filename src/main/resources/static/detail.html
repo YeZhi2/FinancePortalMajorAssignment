@@ -67,6 +67,7 @@
                     <div class="product-code">${UI.escape(product.code)} · ${UI.escape(product.category)}</div>
                 </div>
                 ${UI.riskBadge(product.riskLevel)}
+                ${product.status === 1 ? '' : '<span class="badge badge-gray">已下架</span>'}
             </div>
             <div class="product-rate" style="margin:16px 0">${product.expectedReturn}<small>% 预期年化</small></div>
             <div class="stat-grid" style="margin-bottom:16px">
@@ -90,6 +91,15 @@
         document.getElementById('amount-help').textContent =
             `起投 ${UI.money(product.minAmount)} 元，剩余可投 ${UI.money(remaining)} 元`;
         document.getElementById('amount').min = product.minAmount;
+
+        // 下架产品仍可查看详情，但不再提供购买入口
+        const purchasable = product.status === 1;
+        const buyButton = document.getElementById('buy-btn');
+        buyButton.disabled = !purchasable;
+        buyButton.textContent = purchasable ? '立即购买' : '产品已下架';
+        if (!purchasable) {
+            document.getElementById('amount-help').textContent = '该产品已下架，仅可查看历史信息';
+        }
 
         const quick = [Number(product.minAmount), 10000, 50000, 100000]
             .filter((value, index, array) => value > 0 && array.indexOf(value) === index);
