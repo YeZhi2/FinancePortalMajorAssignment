@@ -41,6 +41,9 @@ FinancePortalMajorAssignment/
 │   └── data.sql                  演示数据（7 个账号、11 个产品、4 条资讯）
 ├── scripts/
 │   └── smoke-test.ps1            31 项接口冒烟测试
+├── dist/
+│   ├── FinancePortalMajorAssignment-v1.0.zip   提交包（对应标签 v1.0）
+│   └── SHA256SUMS.txt            压缩包校验值
 └── src/
     ├── main/java/com/finance/portal/
     │   ├── FinancePortalApplication.java
@@ -183,6 +186,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-test.ps1
 | 需求文档（功能清单、角色、流程、页面/接口清单） | [docs/requirements.md](docs/requirements.md) |
 | 代码仓库（完整源码 + 数据库脚本 + 启动说明） | 本仓库 + [sql/schema.sql](sql/schema.sql) + [sql/data.sql](sql/data.sql) + 本文档 |
 | AI 使用记录（提示词、产出摘要、人工验证与修改） | [docs/ai-usage.md](docs/ai-usage.md) |
+
+> 打包提交：`dist/FinancePortalMajorAssignment-v1.0.zip` 是标签 `v1.0`（提交 `1346668`）的静态快照，内容与本仓库该标签一致，校验值见 `dist/SHA256SUMS.txt`。若课程平台要求上传单个文件，直接使用该压缩包。
 
 ## 声明
 
